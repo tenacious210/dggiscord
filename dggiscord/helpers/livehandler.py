@@ -1,6 +1,7 @@
 import sqlite3
 import logging
 import dataclasses
+from typing import Callable
 
 from dggbot.live import StreamInfo
 from dggbot.live.message import Stream
@@ -14,29 +15,77 @@ logger.info("loading...")
 sqlite3.register_adapter(bool, int)
 sqlite3.register_converter("BOOLEAN", lambda v: bool(int(v)))
 
+liveinfo_template = lambda: {
+    "live": False,
+    "type": None,
+    "game": None,
+    "preview": None,
+    "status_text": None,
+    "started_at": None,
+    "ended_at": None,
+    "duration": None,
+    "viewers": None,
+    "id": None,
+    "chat_url": None,
+}
+
+
+def init(notify_func: Callable):
+    global live_notify
+    live_notify = notify_func
+
 
 def live_handler(streaminfo: StreamInfo):
-    logger.info(f"Got stream info")
+    logger.debug(f"Got stream info")
 
     con = sqlite3.connect(cfg["db"], detect_types=sqlite3.PARSE_DECLTYPES)
     con.row_factory = sqlite3.Row
     cur = con.cursor()
 
-    old_streams = cur.execute("SELECT * FROM liveinfo").fetchall()
-    old_streams = [dict(stream) for stream in old_streams]
-    old_streams = {stream.pop("platform"): stream for stream in old_streams}
+    old_streaminfo = cur.execute("SELECT * FROM liveinfo").fetchall()
+    old_streaminfo = [dict(stream) for stream in old_streaminfo]
+    old_streaminfo = {stream.pop("platform"): stream for stream in old_streaminfo}
 
-    new_streams = streaminfo.get_livestreams()
-    new_streams = [dataclasses.asdict(stream) for stream in new_streams]
-    new_streams = {stream.pop("platform"): stream for stream in new_streams}
+    new_streaminfo = dataclasses.asdict(streaminfo)
+    for platform in new_streaminfo.keys():
+        if new_streaminfo[platform] == None:
+            new_streaminfo[platform] = liveinfo_template()
 
-    # compare them and send a notification if they're different
+    compare_and_notify(old_streaminfo, new_streaminfo)
 
-    for platform in new_streams.keys():
-        for k, v in new_streams[platform].items():
+    for platform in new_streaminfo.keys():
+        for k, v in new_streaminfo[platform].items():
             params = {"value": v, "platform": platform}
             # don't try this at home, kids
             query = f"UPDATE liveinfo SET {k} = :value WHERE platform = :platform"
             cur.execute(query, params)
 
     con.commit()
+    con.close()
+
+
+def compare_and_notify(old_streaminfo: dict, new_streaminfo: dict):
+    streams = {"started": {}, "ended": {}, "ongoing": {}}
+    for platform in new_streaminfo.keys():
+        if (
+            old_streaminfo[platform]["live"] == False
+            and new_streaminfo[platform]["live"] == True
+        ):
+            streams["started"][platform] = new_streaminfo[platform]
+
+        if (
+            old_streaminfo[platform]["live"] == True
+            and new_streaminfo[platform]["live"] == False
+        ):
+            streams["ended"][platform] = new_streaminfo[platform]
+
+        if new_streaminfo[platform]["live"] == True:
+            streams["ongoing"][platform] = new_streaminfo[platform]
+
+    if streams["started"]:
+        for platform in streams["started"].keys():
+            live_notify(platform, streams["started"][platform])
+
+    # elif streams["ended"] and streams["ongoing"]:
+    #     notify_platform_switch
+    #     pass

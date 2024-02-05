@@ -5,7 +5,7 @@ import helpers.config as config
 import helpers.database
 import discord.client as client
 import helpers.live
-from helpers.livehandler import live_handler
+from helpers import livehandler, livenotifier
 
 import subsync.translator
 import subsync.sync
@@ -16,5 +16,7 @@ import discord.serverstate
 import commands.sync
 import commands.livestatuscfg
 
-Thread(target=helpers.live.init, args=[live_handler]).start()
+livenotifier.init(client.bot)
+livehandler.init(livenotifier.send_live_notification)
+Thread(target=helpers.live.init, args=[livehandler.live_handler]).start()
 client.bot.run(config.cfg["discord"]["token"])

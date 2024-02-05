@@ -6,7 +6,8 @@ logger = logging.getLogger(__name__)
 logger.info("loading...")
 
 try:
-    con = sqlite3.connect(cfg["db"])
+    con = sqlite3.connect(cfg["db"], detect_types=sqlite3.PARSE_DECLTYPES)
+    con.row_factory = sqlite3.Row
     cur = con.cursor()
     logger.info("sqlite database connection and cursor successfully initialized")
 except Exception as e:
@@ -30,7 +31,7 @@ cur.execute(
 if cur.fetchone()[0] == 0:
     logger.warn("table 'hubchannels' does not exist in database, creating schema...")
     cur.execute(
-        "CREATE TABLE 'hubchannels' ( `discord_server` INTEGER PRIMARY KEY, `hubchannel` INTEGER )"
+        "CREATE TABLE 'hubchannels' ( `discord_server` INTEGER PRIMARY KEY, `hubchannel` INTEGER, `role` INTEGER, `last_notification_sent` TEXT )"
     )
     cur.execute("CREATE UNIQUE INDEX idx_hubchannels ON hubchannels (discord_server)")
 
