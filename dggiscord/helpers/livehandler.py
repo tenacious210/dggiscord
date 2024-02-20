@@ -51,21 +51,7 @@ def live_handler(streaminfo: StreamInfo):
         if new_streaminfo[platform] == None:
             new_streaminfo[platform] = liveinfo_template()
 
-    compare_and_notify(old_streaminfo, new_streaminfo)
-
-    for platform in new_streaminfo.keys():
-        for k, v in new_streaminfo[platform].items():
-            params = {"value": v, "platform": platform}
-            # don't try this at home, kids
-            query = f"UPDATE liveinfo SET {k} = :value WHERE platform = :platform"
-            cur.execute(query, params)
-
-    con.commit()
-    con.close()
-
-
-def compare_and_notify(old_streaminfo: dict, new_streaminfo: dict):
-    streams = {"started": {}, "ended": {}, "ongoing": {}}
+    streams = {"started": {}, "ended": {}, "ongoing": {}, "offline": {}}
     for platform in new_streaminfo.keys():
         if (
             old_streaminfo[platform]["live"] == False
@@ -81,11 +67,18 @@ def compare_and_notify(old_streaminfo: dict, new_streaminfo: dict):
 
         if new_streaminfo[platform]["live"] == True:
             streams["ongoing"][platform] = new_streaminfo[platform]
+        elif new_streaminfo[platform] == False:
+            streams["offline"][platform] = new_streaminfo[platform]
 
-    if streams["started"]:
-        for platform in streams["started"].keys():
-            live_notify(platform, streams["started"][platform])
+    logger.info(f"Live streams: {', '.join(streams['ongoing'].keys())}")
+    live_notify(streams)
 
-    # elif streams["ended"] and streams["ongoing"]:
-    #     notify_platform_switch
-    #     pass
+    for platform in new_streaminfo.keys():
+        for k, v in new_streaminfo[platform].items():
+            params = {"value": v, "platform": platform}
+            # don't try this at home, kids
+            query = f"UPDATE liveinfo SET {k} = :value WHERE platform = :platform"
+            cur.execute(query, params)
+
+    con.commit()
+    con.close()

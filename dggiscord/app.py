@@ -17,6 +17,6 @@ import commands.sync
 import commands.livestatuscfg
 
 livenotifier.init(client.bot)
-livehandler.init(livenotifier.send_live_notification)
+livehandler.init(livenotifier.parse_streams)
 Thread(target=helpers.live.init, args=[livehandler.live_handler]).start()
 client.bot.run(config.cfg["discord"]["token"])

@@ -21,7 +21,13 @@ cur.execute(
 if cur.fetchone()[0] == 0:
     logger.warn("table 'flairmap' does not exist in database, creating schema...")
     cur.execute(
-        "CREATE TABLE 'flairmap' ( `discord_server` INTEGER, `discord_role` INTEGER, `dgg_flair` TEXT, `last_updated` TEXT, `last_refresh` TEXT, PRIMARY KEY(`discord_role`) )"
+        """CREATE TABLE 'flairmap' ( 
+            `discord_server` INTEGER,
+            `discord_role` INTEGER,
+            `dgg_flair` TEXT,
+            `last_updated` TEXT,
+            `last_refresh` TEXT,
+            PRIMARY KEY(`discord_role`) )"""
     )
 
 # hubchannel configs
@@ -31,7 +37,12 @@ cur.execute(
 if cur.fetchone()[0] == 0:
     logger.warn("table 'hubchannels' does not exist in database, creating schema...")
     cur.execute(
-        "CREATE TABLE 'hubchannels' ( `discord_server` INTEGER PRIMARY KEY, `hubchannel` INTEGER, `role` INTEGER, `last_notification_sent` TEXT )"
+        """CREATE TABLE 'hubchannels' ( 
+            `discord_server` INTEGER PRIMARY KEY,
+            `hubchannel` INTEGER,
+            `role` INTEGER,
+            `last_notification_sent` TEXT,
+            `last_notification_id` INTEGER )"""
     )
     cur.execute("CREATE UNIQUE INDEX idx_hubchannels ON hubchannels (discord_server)")
 

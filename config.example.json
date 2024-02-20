@@ -30,7 +30,8 @@
       "auth": "https://www.destiny.gg/profile/authentication",
       "profile": "https://www.destiny.gg/profile",
       "subscribe": "https://www.destiny.gg/subscribe",
-      "twitchint": "https://support.discordapp.com/hc/en-us/articles/212112068-Twitch-Integration-FAQ"
+      "twitchint": "https://support.discordapp.com/hc/en-us/articles/212112068-Twitch-Integration-FAQ",
+      "vodplaylist": "https://www.youtube.com/playlist?list=PLFs19LVskfNzQLZkGG_zf6yfYTp_3v_e6"
     }
   },
 

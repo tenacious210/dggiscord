@@ -32,13 +32,20 @@ async def hubchannel(ctx, arg: str, role: str = None):
             seconds=cfg["discord"]["live_notification_cooldown"]
         )
         cur.execute(
-            "REPLACE INTO hubchannels VALUES(?,?,?,?)",
-            (ctx.message.guild.id, ctx.message.channel.id, None, last_sent.isoformat()),
+            "REPLACE INTO hubchannels VALUES(?,?,?,?,?)",
+            (
+                ctx.message.guild.id,
+                ctx.message.channel.id,
+                None,
+                last_sent.isoformat(),
+                None,
+            ),
         )
         con.commit()
         await ctx.reply(
             f"Channel set to <#{ctx.message.channel.id}>. (Optional: Add a role with `!hubchannel role @<role>`)"
         )
+        logger.info(f"hubchannel {ctx.message.channel.id} added")
     elif arg == "role":
         if not ROLE_PATTERN.match(role):
             await ctx.reply('Error: Invalid argument for "role"')
@@ -50,6 +57,7 @@ async def hubchannel(ctx, arg: str, role: str = None):
         )
         con.commit()
         await ctx.reply(f"Role for <#{ctx.message.channel.id}> set to {role}")
+        logger.info(f"hubchannel role {role} added for {ctx.message.channel.id}")
 
     else:
         await ctx.reply("Error: Command args `set|get|role`.")
