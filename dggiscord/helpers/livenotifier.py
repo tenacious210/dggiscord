@@ -38,9 +38,9 @@ def parse_streams(streams: dict):
         cooldown = cfg["discord"]["live_notification_cooldown"]
         on_cooldown = (datetime.now() - last_notification_sent).seconds <= cooldown
 
-        if (streams["started"] and not on_cooldown) or hubchannel[
-            "last_notification_id"
-        ] is None:
+        if (streams["started"] and not on_cooldown) or (
+            hubchannel["last_notification_id"] is None
+        ):
             logger.info("sending new notification")
             cur.execute(
                 """UPDATE hubchannels 
@@ -98,7 +98,9 @@ def generate_live_notification(streams: dict, role: str = None) -> str:
     elif "kick" in streams.keys():
         preferred_platform = "kick"
 
-    if time_started := streams[preferred_platform]["started_at"]:
+    if preferred_platform and (
+        time_started := streams[preferred_platform]["started_at"]
+    ):
         time_started = isoparse(time_started)
         unix_time_started = mktime(time_started.timetuple())
         notification += f" <t:{round(unix_time_started)}:R>"
