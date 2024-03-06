@@ -38,8 +38,10 @@ def parse_streams(streams: dict):
         cooldown = cfg["discord"]["live_notification_cooldown"]
         on_cooldown = (datetime.now() - last_notification_sent).seconds <= cooldown
 
-        if (streams["started"] and not on_cooldown) or (
-            hubchannel["last_notification_id"] is None
+        if (
+            streams["started"]
+            and not on_cooldown
+            or hubchannel["last_notification_id"] is None
         ):
             logger.info("sending new notification")
             cur.execute(
@@ -65,7 +67,11 @@ def parse_streams(streams: dict):
                 ),
             )
             con.commit()
-        elif streams["ongoing"] and on_cooldown and hubchannel["last_notification_id"]:
+        elif (
+            (streams["started"] or streams["ended"])
+            and on_cooldown
+            and hubchannel["last_notification_id"]
+        ):
             logger.info("updating old notificaiton")
             last_notification = bot.get_message(hubchannel["last_notification_id"])
             bot.loop.create_task(last_notification.edit(notification))
@@ -106,14 +112,6 @@ def generate_live_notification(streams: dict, role: str = None) -> str:
         notification += f" <t:{round(unix_time_started)}:R>"
 
     notification += "!**"
-
-    viewers = [
-        streams[platform]["viewers"]
-        for platform in streams.keys()
-        if type(streams[platform]["viewers"]) == int
-    ]
-    if viewers:
-        notification += f"\n**Viewers:** {sum(viewers)}"
 
     notification += "\n**Streams:** "
 
